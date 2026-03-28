@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ネタブレスト</title>
+<meta name="theme-color" content="#1a0a2e">
+<link rel="manifest" href="data:application/json,{}">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0e0618;
+    --bg2: #1a0a2e;
+    --bg3: #251040;
+    --accent: #ff3cac;
+    --accent2: #ffd700;
+    --accent3: #00f5ff;
+    --text: #f0e6ff;
+    --text2: #a888cc;
+    --card: #1e0d35;
+    --border: #3a1a5e;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ノイズテクスチャ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ヘッダー */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(14,6,24,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 18px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  /* タブ */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 57px;
+    z-index: 90;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .tab.active {
+    background: var(--bg3);
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  /* メインコンテンツ */
+  .page { display: none; padding: 16px; max-width: 680px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ブレスト画面 */
+  .dice-section {
+    text-align: center;
+    padding: 24px 0 16px;
+  }
+
+  .dice-btn {
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
+    border: 2px solid var(--accent);
+    background: linear-gradient(135deg, #2d0a4e, #1a0a2e);
+    font-size: 48px;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 0 30px rgba(255,60,172,0.3), inset 0 0 20px rgba(255,60,172,0.05);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dice-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 0 50px rgba(255,60,172,0.6);
+  }
+
+  .dice-btn.rolling {
+    animation: roll 0.5s ease-out;
+  }
+
+  @keyframes roll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-15deg) scale(0.9); }
+    50% { transform: rotate(20deg) scale(1.05); }
+    75% { transform: rotate(-10deg) scale(0.95); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  .dice-label {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 0.05em;
+  }
+
+  /* 曲カード */
+  .song-card {
+    background: linear-gradient(135deg, var(--bg3), var(--card));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 16px 0;
+    position: relative;
+    overflow: hidden;
+    display: none;
+  }
+
+  .song-card.visible { display: block; animation: fadeIn 0.4s ease; }
+
+  .song-card::before {
+    content: '♪';
+    position: absolute;
+    right: 20px;
+    top: 12px;
+    font-size: 48px;
+    opacity: 0.08;
+    color: var(--accent2);
+  }
+
+  .song-title {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--accent2);
+    margin-bottom: 4px;
+  }
+
+  .song-artist {
+    font-size: 14px;
+    color: var(--text2);
+  }
+
+  /* AIカード */
+  .ai-results {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 0 16px;
+  }
+
+  .ai-results.visible { display: flex; animation: fadeIn 0.5s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .result-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .result-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .result-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag {
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .tag:active { transform: scale(0.95); }
+
+  .tag.emotion {
+    background: rgba(255,60,172,0.15);
+    color: #ff8ed4;
+    border-color: rgba(255,60,172,0.3);
+  }
+
+  .tag.phrase {
+    background: rgba(255,215,0,0.12);
+    color: #ffd700;
+    border-color: rgba(255,215,0,0.25);
+  }
+
+  .tag.aruaru {
+    background: rgba(0,245,255,0.1);
+    color: #00f5ff;
+    border-color: rgba(0,245,255,0.2);
+  }
+
+  .tag.opposite {
+    background: rgba(180,100,255,0.12);
+    color: #cc88ff;
+    border-color: rgba(180,100,255,0.25);
+  }
+
+  /* タップでメモ追記 */
+  .tag.selected {
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
+  }
+
+  /* メモエリア */
+  .memo-section {
+    display: none;
+    margin-top: 4px;
+  }
+
+  .memo-section.visible { display: block; animation: fadeIn 0.3s ease; }
+
+  .memo-label {
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .memo-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 15px;
+    resize: none;
+    min-height: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .memo-input:focus { border-color: var(--accent); }
+
+  .selected-tags-display {
+    min-height: 36px;
+    background: rgba(255,215,0,0.06);
+    border: 1px dashed rgba(255,215,0,0.3);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--accent2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .selected-tags-display:empty::after {
+    content: 'タグをタップして追加…';
+    color: var(--text2);
+    font-size: 13px;
+  }
+
+  .save-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #a020f0);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 20px rgba(255,60,172,0.3);
+    margin-top: 12px;
+  }
+
+  .save-btn:active { transform: scale(0.97); }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ローディング */
+  .loading-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    display: none;
+  }
+
+  .loading-card.visible { display: block; }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { font-size: 14px; color: var(--text2); }
+
+  /* ネタ帳 */
+  .neta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text);
+  }
+
+  .add-btn {
+    padding: 8px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .search-bar {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .search-bar:focus { border-color: var(--accent3); }
+  .search-bar::placeholder { color: var(--text2); }
+
+  .status-filter {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .status-btn {
+    padding: 6px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .status-btn.active {
+    background: var(--bg3);
+    color: var(--text);
+    border-color: var(--accent3);
+  }
+
+  .neta-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .neta-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .neta-card:active { border-color: var(--accent); }
+
+  .neta-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .neta-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+    margin-right: 8px;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 100px;
+    flex-shrink: 0;
+  }
+
+  .status-idea { background: rgba(0,245,255,0.15); color: var(--accent3); }
+  .status-wip { background: rgba(255,215,0,0.15); color: var(--accent2); }
+  .status-done { background: rgba(0,255,120,0.15); color: #00ff88; }
+  .status-sealed { background: rgba(150,150,150,0.15); color: #888; }
+
+  .neta-card-song {
+    font-size: 12px;
+    color: var(--accent2);
+    margin-bottom: 4px;
+  }
+
+  .neta-card-body {
+    font-size: 13px;
+    color: var(--text2);
+    white-space: pre-wrap;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .neta-date {
+    font-size: 11px;
+    color: var(--border);
+    margin-top: 8px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* 空状態 */
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text2);
+    font-size: 14px;
+    line-height: 2;
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* モーダル */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; padding-top: 40px; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    width: 100%;
+    max-width: 560px;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-textarea { resize: vertical; min-height: 120px; }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--accent); }
+  .form-select { appearance: none; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 13px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text2);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  .btn-save {
+    flex: 2;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--accent), #a020f0);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn-delete {
+    padding: 13px 16px;
+    background: transparent;
+    border: 1px solid rgba(255,60,172,0.4);
+    border-radius: 12px;
+    color: var(--accent);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* 曲リスト */
+  .song-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .song-list-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .song-list-info { flex: 1; }
+  .song-list-title { font-size: 15px; font-weight: 700; }
+  .song-list-artist { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  .del-btn {
+    width: 32px;
+    height: 32px;
+    background: rgba(255,60,172,0.1);
+    border: 1px solid rgba(255,60,172,0.3);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .add-song-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .add-song-form .form-input { margin-bottom: 10px; }
+
+  .add-song-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent3);
+    border: none;
+    border-radius: 10px;
+    color: var(--bg);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* トースト */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* API設定 */
+  .api-notice {
+    background: rgba(0,245,255,0.06);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--accent3);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎤 ネタブレスト</div>
+  <div style="font-size:12px;color:var(--text2);font-family:'Space Mono',monospace;">v1.0</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('brainstorm')">🎲 ブレスト</button>
+  <button class="tab" onclick="switchTab('neta')">📝 ネタ帳</button>
+  <button class="tab" onclick="switchTab('songs')">🎵 曲リスト</button>
+</div>
+
+<!-- ブレストタブ -->
+<div id="page-brainstorm" class="page active">
+
+  <div class="api-notice" id="apiNotice" style="display:none">
+    ⚠️ Gemini APIキーが未設定です。<br>
+    <a href="#" onclick="showApiSetting()" style="color:var(--accent3)">ここをタップして設定</a>してください。
+  </div>
+
+  <div class="dice-section">
+    <button class="dice-btn" id="diceBtn" onclick="rollDice()">🎲</button>
+    <div class="dice-label">タップして曲を引く</div>
+  </div>
+
+  <div class="song-card" id="songCard">
+    <div class="song-title" id="songTitle">—</div>
+    <div class="song-artist" id="songArtist"></div>
+  </div>
+
+  <div class="loading-card" id="loadingCard">
+    <div class="spinner"></div>
+    <div class="loading-text">AIがネタの種を考えています…</div>
+  </div>
+
+  <div class="ai-results" id="aiResults">
+    <!-- 感情 -->
+    <div class="result-card">
+      <div class="result-card-header">
+        <div class="result-icon" style="background:rgba(255,60,172,0.2)">💗</div>
+        <span class="result-label" style="color:#ff8ed4">感情・雰囲気</span>
+      </div>
+      <div class="tag-list" id="emotionTags"></div>
+    </div>
+    <!-- フレーズ -->
+    <div class="result-card">
+      <div class="result-card-header">
+        <div class="result-icon" style="background:rgba(255,215,0,0.15)">✨</div>
+        <span class="result-label" style="color:#ffd700">フレーズ・キーワード</span>
+      </div>
+      <div class="tag-list" id="phraseTags"></div>
+    </div>
+    <!-- あるある -->
+    <div class="result-card">
+      <div class="result-card-header">
+        <div class="result-icon" style="background:rgba(0,245,255,0.1)">😂</div>
+        <span class="result-label" style="color:#00f5ff">あるある</span>
+      </div>
+      <div class="tag-list" id="aruaruTags"></div>
+    </div>
+    <!-- 対面ワード -->
+    <div class="result-card">
+      <div class="result-card-header">
+        <div class="result-icon" style="background:rgba(180,100,255,0.15)">🔄</div>
+        <span class="result-label" style="color:#cc88ff">対面ワード（ギャップ）</span>
+      </div>
+      <div class="tag-list" id="oppositeTags"></div>
+    </div>
+  </div>
+
+  <!-- メモ -->
+  <div class="memo-section" id="memoSection">
+    <div class="result-card">
+      <div class="result-card-header">
+        <div class="result-icon" style="background:rgba(255,255,255,0.08)">📝</div>
+        <span class="result-label" style="color:var(--text2)">メモ</span>
+      </div>
+      <div class="memo-label">タグをタップして追加、自由にメモも書けます</div>
+      <div class="selected-tags-display" id="selectedTagsDisplay"></div>
+      <textarea class="memo-input" id="memoInput" placeholder="ネタのアイデアをメモ…&#10;&#10;例）サビを「会社あるある」に差し替え、など"></textarea>
+      <button class="save-btn" id="saveMemoBtn" onclick="saveMemo()">💾 ネタ帳に保存</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ネタ帳タブ -->
+<div id="page-neta" class="page">
+  <div class="neta-header">
+    <div class="page-title">📝 ネタ帳</div>
+    <button class="add-btn" onclick="openNetaModal()">＋ 追加</button>
+  </div>
+  <input class="search-bar" type="text" placeholder="🔍 検索…" id="searchInput" oninput="renderNeta()">
+  <div class="status-filter">
+    <button class="status-btn active" data-status="all" onclick="filterStatus(this)">すべて</button>
+    <button class="status-btn" data-status="idea" onclick="filterStatus(this)">💡 アイデア</button>
+    <button class="status-btn" data-status="wip" onclick="filterStatus(this)">🔧 作成中</button>
+    <button class="status-btn" data-status="done" onclick="filterStatus(this)">✅ 完成</button>
+    <button class="status-btn" data-status="sealed" onclick="filterStatus(this)">📦 封印</button>
+  </div>
+  <div class="neta-list" id="netaList"></div>
+</div>
+
+<!-- 曲リストタブ -->
+<div id="page-songs" class="page">
+  <div class="neta-header">
+    <div class="page-title">🎵 曲リスト</div>
+  </div>
+  <div class="add-song-form">
+    <input class="form-input" id="newSongTitle" placeholder="曲名（例：残酷な天使のテーゼ）" type="text">
+    <input class="form-input" id="newSongArtist" placeholder="アーティスト名（例：高橋洋子）" type="text">
+    <button class="add-song-btn" onclick="addSong()">＋ 追加</button>
+  </div>
+  <div class="song-list" id="songListEl"></div>
+</div>
+
+<!-- ネタ編集モーダル -->
+<div class="modal-overlay" id="netaModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">ネタを追加</div>
+    <div class="form-group">
+      <label class="form-label">タイトル</label>
+      <input class="form-input" id="netaTitle" placeholder="ネタのタイトル">
+    </div>
+    <div class="form-group">
+      <label class="form-label">元の曲</label>
+      <input class="form-input" id="netaSong" placeholder="曲名（任意）">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ネタ内容・メモ</label>
+      <textarea class="form-textarea" id="netaBody" placeholder="ネタの内容、歌詞案、気づきなど…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ステータス</label>
+      <select class="form-select" id="netaStatus">
+        <option value="idea">💡 アイデア</option>
+        <option value="wip">🔧 作成中</option>
+        <option value="done">✅ 完成</option>
+        <option value="sealed">📦 封印</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNetaModal()">キャンセル</button>
+      <button class="btn-delete" id="deleteBtn" onclick="deleteNeta()" style="display:none">削除</button>
+      <button class="btn-save" onclick="saveNeta()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- APIキー設定モーダル -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-title">🔑 Gemini APIキー設定</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">
+      AIによるネタ案生成にGemini APIキーが必要です。<br>
+      Google AI Studioで無料取得できます。<br>
+      キーはこのデバイスのlocalStorageのみに保存されます。
+    </p>
+    <div class="form-group">
+      <label class="form-label">APIキー</label>
+      <input class="form-input" id="apiKeyInput" type="password" placeholder="AIza...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeApiModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveApiKey()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase CDN (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDZLsctyGaNzf9amSmM7Mscyk2mmssF_jI",
+  authDomain: "owaprobaseball.firebaseapp.com",
+  databaseURL: "https://owaprobaseball-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "owaprobaseball",
+  storageBucket: "owaprobaseball.firebasestorage.app",
+  messagingSenderId: "37318728572",
+  appId: "1:37318728772:web:930f71d8985f46f29ba2f9"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ユーザーID（デバイス固有）
+let userId = localStorage.getItem('neta_uid');
+if (!userId) {
+  userId = 'u_' + Math.random().toString(36).slice(2, 10);
+  localStorage.setItem('neta_uid', userId);
+}
+
+const rootRef = (path) => db.ref('netabrainstorm/' + userId + '/' + path);
+
+// ===== State =====
+let songs = [];   // 登録曲
+let netas = [];   // ネタ帳
+let currentSong = null;
+let currentAiData = null;
+let selectedTags = [];
+let editingNetaId = null;
+let statusFilter = 'all';
+
+// ===== Firebase リスナー =====
+rootRef('songs').on('value', snap => {
+  songs = [];
+  snap.forEach(child => songs.push(Object.assign({ id: child.key }, child.val())));
+  renderSongList();
+});
+
+rootRef('netas').on('value', snap => {
+  netas = [];
+  snap.forEach(child => netas.push(Object.assign({ id: child.key }, child.val())));
+  netas.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  renderNeta();
+});
+
+// ===== グローバル公開 =====
+window.switchTab = (tab) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  document.querySelectorAll('.tab')[['brainstorm','neta','songs'].indexOf(tab)].classList.add('active');
+};
+
+// ===== APIキー =====
+function getApiKey() { return localStorage.getItem('neta_api_key') || ''; }
+window.showApiSetting = () => {
+  document.getElementById('apiKeyInput').value = getApiKey();
+  document.getElementById('apiModal').classList.add('open');
+};
+window.closeApiModal = () => document.getElementById('apiModal').classList.remove('open');
+window.saveApiKey = () => {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { showToast('APIキーを入力してください'); return; }
+  localStorage.setItem('neta_api_key', key);
+  document.getElementById('apiModal').classList.remove('open');
+  document.getElementById('apiNotice').style.display = 'none';
+  showToast('✅ APIキーを保存しました');
+};
+
+// APIキー確認
+if (!getApiKey()) {
+  document.getElementById('apiNotice').style.display = 'block';
+}
+
+// ===== サイコロ =====
+const JPOP_FALLBACK = [
+  { title: "残酷な天使のテーゼ", artist: "高橋洋子" },
+  { title: "LEMON", artist: "米津玄師" },
+  { title: "ドライフラワー", artist: "優里" },
+  { title: "夜に駆ける", artist: "YOASOBI" },
+  { title: "紅蓮華", artist: "LiSA" },
+  { title: "Pretender", artist: "Official髭男dism" },
+  { title: "パプリカ", artist: "Foorin" },
+  { title: "恋", artist: "星野源" },
+  { title: "愛をこめて花束を", artist: "Superfly" },
+  { title: "川の流れのように", artist: "美空ひばり" },
+  { title: "津軽海峡冬景色", artist: "石川さゆり" },
+  { title: "勝手にシンドバッド", artist: "サザンオールスターズ" },
+  { title: "YMCA", artist: "西城秀樹" },
+  { title: "ロビンソン", artist: "スピッツ" },
+  { title: "チェリー", artist: "スピッツ" },
+  { title: "アゲハ蝶", artist: "ポルノグラフィティ" },
+  { title: "糸", artist: "中島みゆき" },
+  { title: "First Love", artist: "宇多田ヒカル" },
+  { title: "だんご三兄弟", artist: "速水けんたろう・茂森あゆみ" },
+  { title: "SAY YES", artist: "CHAGE and ASKA" },
+];
+
+window.rollDice = async () => {
+  const btn = document.getElementById('diceBtn');
+  btn.classList.add('rolling');
+  setTimeout(() => btn.classList.remove('rolling'), 500);
+
+  // 曲を決定
+  let song;
+  if (songs.length > 0) {
+    song = songs[Math.floor(Math.random() * songs.length)];
+    currentSong = { title: song.title, artist: song.artist };
+  } else {
+    currentSong = JPOP_FALLBACK[Math.floor(Math.random() * JPOP_FALLBACK.length)];
+  }
+
+  // 曲カード表示
+  document.getElementById('songTitle').textContent = currentSong.title;
+  document.getElementById('songArtist').textContent = currentSong.artist || '';
+  document.getElementById('songCard').classList.add('visible');
+
+  // AI結果リセット
+  document.getElementById('aiResults').classList.remove('visible');
+  document.getElementById('memoSection').classList.remove('visible');
+  document.getElementById('loadingCard').classList.add('visible');
+  selectedTags = [];
+  updateSelectedTagsDisplay();
+
+  // AI呼び出し
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('loadingCard').classList.remove('visible');
+    showToast('❌ APIキーを設定してください');
+    showApiSetting();
+    return;
+  }
+
+  try {
+    const promptLines = [
+      'あなたはお笑い芸人のネタブレストを助けるアシスタントです。',
+      '曲名「' + currentSong.title + '」（' + (currentSong.artist || 'J-POP') + '）について、歌ネタパロディのブレスト素材を生成してください。',
+      '',
+      '以下のJSON形式のみで返してください。説明文やコードブロック記号は不要です。',
+      '{',
+      '  "emotions": ["感情1", "感情2", "感情3", "感情4", "感情5"],',
+      '  "phrases": ["フレーズ1", "フレーズ2", "フレーズ3", "フレーズ4", "フレーズ5"],',
+      '  "aruaru": ["あるある1", "あるある2", "あるある3", "あるある4", "あるある5"],',
+      '  "opposites": ["対面ワード1", "対面ワード2", "対面ワード3", "対面ワード4", "対面ワード5"]',
+      '}',
+      '',
+      'emotions: この曲が持つ感情や雰囲気（例：切ない、高揚感、青春）',
+      'phrases: 歌詞や曲から連想されるフレーズや印象的なワード',
+      'aruaru: emotionsやphrasesに紐づく日常のあるある（ネタに使えそうなもの）',
+      'opposites: emotionsやphrasesとは真逆・対照的なワード（ギャップネタに使える）'
+    ];
+    const prompt = promptLines.join('\n');
+
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 1000 }
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error((err.error && err.error.message) || 'API error');
+    }
+
+    const data = await res.json();
+    const text = data.candidates[0].content.parts[0].text.trim();
+    const clean = text.replace(/```json|```/g, '').trim();
+    currentAiData = JSON.parse(clean);
+
+    renderAiResults(currentAiData);
+    document.getElementById('loadingCard').classList.remove('visible');
+    document.getElementById('aiResults').classList.add('visible');
+    document.getElementById('memoSection').classList.add('visible');
+
+  } catch (e) {
+    document.getElementById('loadingCard').classList.remove('visible');
+    console.error(e);
+    showToast('❌ AI生成エラー: ' + e.message);
+  }
+};
+
+function renderAiResults(data) {
+  renderTags('emotionTags', data.emotions || [], 'emotion');
+  renderTags('phraseTags', data.phrases || [], 'phrase');
+  renderTags('aruaruTags', data.aruaru || [], 'aruaru');
+  renderTags('oppositeTags', data.opposites || [], 'opposite');
+}
+
+function renderTags(containerId, items, cls) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  items.forEach(item => {
+    const tag = document.createElement('span');
+    tag.className = `tag ${cls}`;
+    tag.textContent = item;
+    tag.onclick = () => toggleTag(tag, item);
+    el.appendChild(tag);
+  });
+}
+
+function toggleTag(el, text) {
+  if (el.classList.contains('selected')) {
+    el.classList.remove('selected');
+    selectedTags = selectedTags.filter(t => t !== text);
+  } else {
+    el.classList.add('selected');
+    selectedTags.push(text);
+  }
+  updateSelectedTagsDisplay();
+}
+
+function updateSelectedTagsDisplay() {
+  const el = document.getElementById('selectedTagsDisplay');
+  el.innerHTML = '';
+  selectedTags.forEach(t => {
+    const span = document.createElement('span');
+    span.style.cssText = 'background:rgba(255,215,0,0.15);padding:3px 10px;border-radius:100px;font-size:12px;font-weight:700;color:#ffd700';
+    span.textContent = t;
+    el.appendChild(span);
+  });
+}
+
+// ===== メモ保存 =====
+window.saveMemo = async () => {
+  const memo = document.getElementById('memoInput').value.trim();
+  if (!currentSong) return;
+
+  const btn = document.getElementById('saveMemoBtn');
+  btn.disabled = true;
+
+  const record = {
+    title: `${currentSong.title} のブレスト`,
+    song: currentSong.title,
+    body: (selectedTags.length ? '【タグ】' + selectedTags.join('、') + '\n\n' : '') + memo,
+    status: 'idea',
+    createdAt: Date.now()
+  };
+
+  try {
+    await rootRef('netas').push(record);
+    document.getElementById('memoInput').value = '';
+    selectedTags = [];
+    updateSelectedTagsDisplay();
+    document.querySelectorAll('.tag.selected').forEach(t => t.classList.remove('selected'));
+    showToast('✅ ネタ帳に保存しました');
+  } catch (e) {
+    showToast('❌ 保存エラー');
+  }
+  btn.disabled = false;
+};
+
+// ===== ネタ帳 =====
+window.filterStatus = (btn) => {
+  document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  statusFilter = btn.dataset.status;
+  renderNeta();
+};
+
+window.renderNeta = () => {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = netas.filter(n => {
+    const matchStatus = statusFilter === 'all' || n.status === statusFilter;
+    const matchSearch = !q || (n.title||'').toLowerCase().includes(q) || (n.body||'').toLowerCase().includes(q);
+    return matchStatus && matchSearch;
+  });
+
+  const el = document.getElementById('netaList');
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>ネタがまだありません</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  const statusMap = { idea: ['💡 アイデア', 'status-idea'], wip: ['🔧 作成中', 'status-wip'], done: ['✅ 完成', 'status-done'], sealed: ['📦 封印', 'status-sealed'] };
+  filtered.forEach(n => {
+    const [label, cls] = statusMap[n.status] || ['💡 アイデア', 'status-idea'];
+    const date = n.createdAt ? new Date(n.createdAt).toLocaleDateString('ja-JP') : '';
+    const card = document.createElement('div');
+    card.className = 'neta-card';
+    card.innerHTML = `
+      <div class="neta-card-top">
+        <div class="neta-card-title">${n.title || '（無題）'}</div>
+        <span class="status-badge ${cls}">${label}</span>
+      </div>
+      ${n.song ? `<div class="neta-card-song">🎵 ${n.song}</div>` : ''}
+      <div class="neta-card-body">${n.body || ''}</div>
+      <div class="neta-date">${date}</div>
+    `;
+    card.onclick = () => openNetaModal(n);
+    el.appendChild(card);
+  });
+};
+
+window.openNetaModal = (neta = null) => {
+  editingNetaId = neta ? neta.id : null;
+  document.getElementById('modalTitle').textContent = neta ? 'ネタを編集' : 'ネタを追加';
+  document.getElementById('netaTitle').value = neta?.title || '';
+  document.getElementById('netaSong').value = neta?.song || '';
+  document.getElementById('netaBody').value = neta?.body || '';
+  document.getElementById('netaStatus').value = neta?.status || 'idea';
+  document.getElementById('deleteBtn').style.display = neta ? 'block' : 'none';
+  document.getElementById('netaModal').classList.add('open');
+};
+
+window.closeNetaModal = () => document.getElementById('netaModal').classList.remove('open');
+
+window.saveNeta = async () => {
+  const title = document.getElementById('netaTitle').value.trim();
+  if (!title) { showToast('タイトルを入力してください'); return; }
+
+  const record = {
+    title,
+    song: document.getElementById('netaSong').value.trim(),
+    body: document.getElementById('netaBody').value.trim(),
+    status: document.getElementById('netaStatus').value,
+    createdAt: editingNetaId ? (netas.find(n=>n.id===editingNetaId)?.createdAt || Date.now()) : Date.now(),
+    updatedAt: Date.now()
+  };
+
+  try {
+    if (editingNetaId) {
+      await db.ref('netabrainstorm/' + userId + '/netas/' + editingNetaId).set(record);
+    } else {
+      await rootRef('netas').push(record);
+    }
+    closeNetaModal();
+    showToast('✅ 保存しました');
+  } catch (e) {
+    showToast('❌ 保存エラー');
+  }
+};
+
+window.deleteNeta = async () => {
+  if (!editingNetaId) return;
+  if (!confirm('このネタを削除しますか？')) return;
+  try {
+    await db.ref('netabrainstorm/' + userId + '/netas/' + editingNetaId).remove();
+    closeNetaModal();
+    showToast('🗑️ 削除しました');
+  } catch (e) {
+    showToast('❌ 削除エラー');
+  }
+};
+
+// ===== 曲リスト =====
+window.addSong = async () => {
+  const title = document.getElementById('newSongTitle').value.trim();
+  const artist = document.getElementById('newSongArtist').value.trim();
+  if (!title) { showToast('曲名を入力してください'); return; }
+
+  try {
+    await rootRef('songs').push({ title, artist });
+    document.getElementById('newSongTitle').value = '';
+    document.getElementById('newSongArtist').value = '';
+    showToast('✅ 追加しました');
+  } catch (e) {
+    showToast('❌ エラー');
+  }
+};
+
+function renderSongList() {
+  const el = document.getElementById('songListEl');
+  if (songs.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎵</div>登録曲はまだありません<br>追加するとサイコロで優先して選ばれます</div>';
+    return;
+  }
+  el.innerHTML = '';
+  songs.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'song-list-item';
+    item.innerHTML = `
+      <div class="song-list-info">
+        <div class="song-list-title">${s.title}</div>
+        ${s.artist ? `<div class="song-list-artist">${s.artist}</div>` : ''}
+      </div>
+      <button class="del-btn" onclick="deleteSong('${s.id}')">✕</button>
+    `;
+    el.appendChild(item);
+  });
+}
+
+window.deleteSong = async (id) => {
+  if (!confirm('この曲を削除しますか？')) return;
+  try {
+    await db.ref('netabrainstorm/' + userId + '/songs/' + id).remove();
+    showToast('🗑️ 削除しました');
+  } catch (e) {
+    showToast('❌ エラー');
+  }
+};
+
+// ===== トースト =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+window.showToast = showToast;
+
+</script>
+</body>
+</html>
